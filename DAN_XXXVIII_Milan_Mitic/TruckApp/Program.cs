@@ -16,8 +16,11 @@ namespace TruckApp
         static Thread[] trucks = new Thread[10];
         static SemaphoreSlim semaphore = new SemaphoreSlim(2);
         static Semaphore s = new Semaphore(10, 10);
+        static EventWaitHandle mre = new AutoResetEvent(false);
+        static Barrier barrier = new Barrier(10);
         static int routTime;
         static int i = -1;
+        static int a = 0;
 
         static void Main(string[] args)
         {
@@ -107,23 +110,27 @@ namespace TruckApp
         /// </summary>
         public static void FillTruck()
         {
-            semaphore.Wait();
+            a++;
+            if (a % 2 != 0)
+            {
+                mre.WaitOne();
+            }
+            else
+            {
+                mre.Set();
+            }
             int timeFilling = random.Next(500, 5001);
-            Thread.Sleep(5000);
+            Thread.Sleep(timeFilling);
             Console.WriteLine("\n{0} was filled in {1} miliseconds", Thread.CurrentThread.Name, timeFilling);
-            semaphore.Release();
+
+
 
             i++;
             Console.WriteLine("\n{0} gets the rout {1}", Thread.CurrentThread.Name, chosenRoutes[i]);
 
-            while (i < 9)
-            {
-                s.WaitOne();
-            }
-
+            barrier.SignalAndWait();
             Thread.Sleep(4);
             routTime = random.Next(500, 5001);
-            s.Release();
             Thread order = new Thread(() => Rout(routTime, timeFilling));
             order.Name = Thread.CurrentThread.Name;
             order.Start();
